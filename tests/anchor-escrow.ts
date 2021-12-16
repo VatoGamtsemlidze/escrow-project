@@ -18,16 +18,19 @@ describe('anchor-escrow', () => {
   const program = anchor.workspace.AnchorEscrow as Program<AnchorEscrow>;
 
   let mintA = null as Token;
-  let mintB = null as Token;
+  let mintB = null as Token; // no need
+  //romelighaca
   let initializerTokenAccountA = null;
-  let initializerTokenAccountB = null;
-  let takerTokenAccountA = null;
+  let initializerTokenAccountB = null; 
+  //romelighaca
+  let takerTokenAccountA = null; 
   let takerTokenAccountB = null;
+
   let vault_account_pda = null;
   let vault_account_bump = null;
   let vault_authority_pda = null;
 
-  const takerAmount = 1000;
+  const takerAmount = 1000; // no need
   const initializerAmount = 500;
 
   const escrowAccount = anchor.web3.Keypair.generate();
@@ -73,20 +76,8 @@ describe('anchor-escrow', () => {
       TOKEN_PROGRAM_ID
     );
 
-    mintB = await Token.createMint(
-      provider.connection,
-      payer,
-      mintAuthority.publicKey,
-      null,
-      0,
-      TOKEN_PROGRAM_ID
-    );
-
     initializerTokenAccountA = await mintA.createAccount(initializerMainAccount.publicKey);
-    takerTokenAccountA = await mintA.createAccount(takerMainAccount.publicKey);
-
-    initializerTokenAccountB = await mintB.createAccount(initializerMainAccount.publicKey);
-    takerTokenAccountB = await mintB.createAccount(takerMainAccount.publicKey);
+    takerTokenAccountA = await mintA.createAccount(takerMainAccount.publicKey); 
 
     await mintA.mintTo(
       initializerTokenAccountA,
@@ -95,18 +86,9 @@ describe('anchor-escrow', () => {
       initializerAmount
     );
 
-    await mintB.mintTo(
-      takerTokenAccountB,
-      mintAuthority.publicKey,
-      [mintAuthority],
-      takerAmount
-    );
-
     let _initializerTokenAccountA = await mintA.getAccountInfo(initializerTokenAccountA);
-    let _takerTokenAccountB = await mintB.getAccountInfo(takerTokenAccountB);
 
     assert.ok(_initializerTokenAccountA.amount.toNumber() == initializerAmount);
-    assert.ok(_takerTokenAccountB.amount.toNumber() == takerAmount);
   });
 
   it("Initialize escrow", async () => {
@@ -126,14 +108,12 @@ describe('anchor-escrow', () => {
     await program.rpc.initialize(
       vault_account_bump,
       new anchor.BN(initializerAmount),
-      new anchor.BN(takerAmount),
       {
         accounts: {
           initializer: initializerMainAccount.publicKey,
           vaultAccount: vault_account_pda,
           mint: mintA.publicKey,
           initializerDepositTokenAccount: initializerTokenAccountA,
-          initializerReceiveTokenAccount: initializerTokenAccountB,
           escrowAccount: escrowAccount.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
@@ -158,12 +138,8 @@ describe('anchor-escrow', () => {
     // Check that the values in the escrow account match what we expect.
     assert.ok(_escrowAccount.initializerKey.equals(initializerMainAccount.publicKey));
     assert.ok(_escrowAccount.initializerAmount.toNumber() == initializerAmount);
-    assert.ok(_escrowAccount.takerAmount.toNumber() == takerAmount);
     assert.ok(
       _escrowAccount.initializerDepositTokenAccount.equals(initializerTokenAccountA)
-    );
-    assert.ok(
-      _escrowAccount.initializerReceiveTokenAccount.equals(initializerTokenAccountB)
     );
   });
 
@@ -171,10 +147,8 @@ describe('anchor-escrow', () => {
     await program.rpc.exchange({
       accounts: {
         taker: takerMainAccount.publicKey,
-        takerDepositTokenAccount: takerTokenAccountB,
         takerReceiveTokenAccount: takerTokenAccountA,
         initializerDepositTokenAccount: initializerTokenAccountA,
-        initializerReceiveTokenAccount: initializerTokenAccountB,
         initializer: initializerMainAccount.publicKey,
         escrowAccount: escrowAccount.publicKey,
         vaultAccount: vault_account_pda,
@@ -185,14 +159,10 @@ describe('anchor-escrow', () => {
     });
 
     let _takerTokenAccountA = await mintA.getAccountInfo(takerTokenAccountA);
-    let _takerTokenAccountB = await mintB.getAccountInfo(takerTokenAccountB);
     let _initializerTokenAccountA = await mintA.getAccountInfo(initializerTokenAccountA);
-    let _initializerTokenAccountB = await mintB.getAccountInfo(initializerTokenAccountB);
 
     assert.ok(_takerTokenAccountA.amount.toNumber() == initializerAmount);
     assert.ok(_initializerTokenAccountA.amount.toNumber() == 0);
-    assert.ok(_initializerTokenAccountB.amount.toNumber() == takerAmount);
-    assert.ok(_takerTokenAccountB.amount.toNumber() == 0);
   });
 
   it("Initialize escrow and cancel escrow", async () => {
@@ -207,14 +177,14 @@ describe('anchor-escrow', () => {
     await program.rpc.initialize(
       vault_account_bump,
       new anchor.BN(initializerAmount),
-      new anchor.BN(takerAmount),
+      // new anchor.BN(takerAmount),
       {
         accounts: {
           initializer: initializerMainAccount.publicKey,
           vaultAccount: vault_account_pda,
           mint: mintA.publicKey,
           initializerDepositTokenAccount: initializerTokenAccountA,
-          initializerReceiveTokenAccount: initializerTokenAccountB,
+          // initializerReceiveTokenAccount: initializerTokenAccountB,
           escrowAccount: escrowAccount.publicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
